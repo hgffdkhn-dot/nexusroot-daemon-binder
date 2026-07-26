@@ -25,12 +25,20 @@ jobs:
         with:
           packages: 'build-tools;34.0.0 platforms;android-34'
 
+      - name: Verify AIDL files exist
+        run: |
+          echo "Listing AIDL files:"
+          ls -R aidl
+
       - name: Generate AIDL NDK sources
         run: |
           mkdir -p gen
-          echo "Generating NDK AIDL..."
-          $ANDROID_SDK_ROOT/build-tools/34.0.0/aidl --lang=ndk -I aidl -o gen aidl/com/nexusroot/manager/*.aidl
-          echo "AIDL generation complete. Listing generated files:"
+          # 列出要处理的文件
+          AIDL_FILES="aidl/com/nexusroot/manager/INexusRootService.aidl aidl/com/nexusroot/manager/INexusRootCallback.aidl aidl/com/nexusroot/manager/WhitelistItem.aidl"
+          echo "Processing: $AIDL_FILES"
+          $ANDROID_SDK_ROOT/build-tools/34.0.0/aidl --lang=ndk -I aidl -o gen -h gen $AIDL_FILES
+          echo "AIDL generation exit code: $?"
+          echo "Generated files:"
           find gen -type f
 
       - name: Verify AIDL output
