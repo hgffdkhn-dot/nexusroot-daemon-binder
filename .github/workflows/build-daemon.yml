@@ -43,7 +43,7 @@ jobs:
 
       - name: Verify AIDL output
         run: |
-          if [ ! -f "/src/INexusRootService.h" ]; then
+          if [ ! -f "/src/NexusRootService.h" ]; then
             echo "ERROR: Missing INexusRootService.h"
             exit 1
           fi
