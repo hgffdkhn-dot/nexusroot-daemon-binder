@@ -3,7 +3,10 @@ project(nexusrootd)
 
 set(CMAKE_CXX_STANDARD 17)
 
-# 根据 ABI 推导 Android 目标三元组
+# 确定 NDK 路径（由 android.toolchain.cmake 设置）
+set(NDK ${ANDROID_NDK})
+
+# 根据 ABI 确定三元组
 if(ANDROID_ABI STREQUAL "arm64-v8a")
     set(TRIPLE "aarch64-linux-android")
 elseif(ANDROID_ABI STREQUAL "armeabi-v7a")
@@ -14,19 +17,21 @@ elseif(ANDROID_ABI STREQUAL "x86")
     set(TRIPLE "i686-linux-android")
 endif()
 
-set(API_LEVEL "24")
-set(SYSROOT "${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/sysroot")
-set(BINDER_NDK "${SYSROOT}/usr/lib/${TRIPLE}/${API_LEVEL}/libbinder_ndk.so")
-set(LOG_LIB "${SYSROOT}/usr/lib/${TRIPLE}/${API_LEVEL}/liblog.so")
+set(SYSROOT ${NDK}/toolchains/llvm/prebuilt/linux-x86_64/sysroot)
+set(NDK_INCLUDE ${SYSROOT}/usr/include)
 
+# 添加头文件搜索路径：AIDL 生成目录 + NDK 头文件
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/gen)
+include_directories(${NDK_INCLUDE})
+
+# 可执行文件
 add_executable(nexusrootd
     src/main.cpp
     src/NexusRootService.cpp
 )
 
-target_include_directories(nexusrootd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/gen)
-
+# 链接库：使用 -lbinder_ndk 和 -llog，通过 linker 查找
 target_link_libraries(nexusrootd
-    ${BINDER_NDK}
-    ${LOG_LIB}
+    binder_ndk
+    log
 )
