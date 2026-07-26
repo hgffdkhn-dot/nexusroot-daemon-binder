@@ -1,0 +1,48 @@
+name: Build Binder Daemon
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - android_abi: arm64-v8a
+            ndk_target: aarch64-none-linux-android
+          - android_abi: armeabi-v7a
+            ndk_target: armv7a-none-linux-androideabi
+          - android_abi: x86_64
+            ndk_target: x86_64-none-linux-android
+          - android_abi: x86
+            ndk_target: i686-none-linux-android
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r26d
+          add-to-path: false
+          local-cache: true
+
+      - name: Build with CMake
+        run: |
+          mkdir build && cd build
+          cmake .. \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=${{ matrix.android_abi }} \
+            -DANDROID_PLATFORM=android-24 \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --target nexusrootd -- -j$(nproc)
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexusrootd-${{ matrix.android_abi }}
+          path: build/nexusrootd
