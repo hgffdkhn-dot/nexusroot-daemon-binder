@@ -1,25 +1,21 @@
 #ifndef NEXUSROOT_SERVICE_H
 #define NEXUSROOT_SERVICE_H
 
-#include <binder/Status.h>
-#include <binder/Binder.h>
-#include <binder/IServiceManager.h>
-#include <binder/Parcel.h>
-#include <android/log.h>
 #include <string>
 #include <vector>
 #include <map>
 #include <mutex>
+#include <android/log.h>
 
-#include "com/nexusroot/manager/INexusRootService.h"
-#include "com/nexusroot/manager/INexusRootCallback.h"
+#include <com/nexusroot/manager/INexusRootService.h>
+#include <com/nexusroot/manager/INexusRootCallback.h>
 
 using namespace android;
 using namespace com::nexusroot::manager;
 
 class NexusRootService : public BnNexusRootService {
 public:
-    // INexusRootService 接口实现
+    // 接口方法声明（与之前相同）
     Status getSuVersion(std::string* _aidl_return) override;
     Status getSuPath(std::string* _aidl_return) override;
     Status isDaemonAlive(bool* _aidl_return) override;
