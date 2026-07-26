@@ -20,34 +20,34 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
           packages: 'build-tools;34.0.0 platforms;android-34'
 
-      - name: Verify AIDL files exist
-        run: |
-          echo "Listing AIDL files:"
-          ls -R aidl
-
       - name: Generate AIDL NDK sources
         run: |
-          mkdir -p gen
-          # 列出要处理的文件
-          AIDL_FILES="aidl/com/nexusroot/manager/INexusRootService.aidl aidl/com/nexusroot/manager/INexusRootCallback.aidl aidl/com/nexusroot/manager/WhitelistItem.aidl"
-          echo "Processing: $AIDL_FILES"
-          $ANDROID_SDK_ROOT/build-tools/34.0.0/aidl --lang=ndk -I aidl -o gen -h gen $AIDL_FILES
-          echo "AIDL generation exit code: $?"
-          echo "Generated files:"
-          find gen -type f
-
-      - name: Verify AIDL output
-        run: |
-          if [ ! -f "/src/NexusRootService.h" ]; then
-            echo "ERROR: Missing INexusRootService.h"
+          mkdir -p gen/include gen/src
+          AIDL_BIN=$ANDROID_SDK_ROOT/build-tools/34.0.0/aidl
+          for aidl_file in $(find aidl -name "*.aidl"); do
+            echo "Compiling $aidl_file ..."
+            $AIDL_BIN --lang=ndk \
+              -I aidl \
+              -h gen/include \
+              -o gen/src \
+              "$aidl_file" || exit 1
+          done
+          if [ ! -f "gen/include/com/nexusroot/manager/INexusRootService.h" ]; then
+            echo "ERROR: Missing INexusRootService.h!"
             exit 1
           fi
-          echo "AIDL headers OK."
+          echo "✅ AIDL generation successful!"
 
       - name: Setup NDK
         uses: nttld/setup-ndk@v1
