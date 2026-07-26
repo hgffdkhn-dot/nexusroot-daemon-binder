@@ -4,28 +4,19 @@ project(nexusrootd)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_library(libbinder libbinder)
-find_library(libutils libutils)
-find_library(liblog liblog)
+# 查找 NDK 库
+find_library(binder_ndk_lib binder_ndk)
+find_library(log_lib log)
 
-add_library(nexusroot_service SHARED
+# 可执行文件（注意：不需要 libutils、libbinder）
+add_executable(nexusrootd
+    src/main.cpp
     src/NexusRootService.cpp
 )
 
-target_include_directories(nexusroot_service PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(nexusrootd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/gen)
 
-target_link_libraries(nexusroot_service
-    ${libbinder}
-    ${libutils}
-    ${liblog}
-)
-
-# 可执行文件
-add_executable(nexusrootd src/main.cpp)
-target_include_directories(nexusrootd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(nexusrootd
-    nexusroot_service
-    ${libbinder}
-    ${libutils}
-    ${liblog}
+    ${binder_ndk_lib}
+    ${log_lib}
 )
