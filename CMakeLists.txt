@@ -2,13 +2,23 @@ cmake_minimum_required(VERSION 3.10)
 project(nexusrootd)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 查找 NDK 库
-find_library(binder_ndk_lib binder_ndk)
-find_library(log_lib log)
+# 根据 ABI 推导 Android 目标三元组
+if(ANDROID_ABI STREQUAL "arm64-v8a")
+    set(TRIPLE "aarch64-linux-android")
+elseif(ANDROID_ABI STREQUAL "armeabi-v7a")
+    set(TRIPLE "armv7a-linux-androideabi")
+elseif(ANDROID_ABI STREQUAL "x86_64")
+    set(TRIPLE "x86_64-linux-android")
+elseif(ANDROID_ABI STREQUAL "x86")
+    set(TRIPLE "i686-linux-android")
+endif()
 
-# 可执行文件（注意：不需要 libutils、libbinder）
+set(API_LEVEL "24")
+set(SYSROOT "${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/sysroot")
+set(BINDER_NDK "${SYSROOT}/usr/lib/${TRIPLE}/${API_LEVEL}/libbinder_ndk.so")
+set(LOG_LIB "${SYSROOT}/usr/lib/${TRIPLE}/${API_LEVEL}/liblog.so")
+
 add_executable(nexusrootd
     src/main.cpp
     src/NexusRootService.cpp
@@ -17,6 +27,6 @@ add_executable(nexusrootd
 target_include_directories(nexusrootd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/gen)
 
 target_link_libraries(nexusrootd
-    ${binder_ndk_lib}
-    ${log_lib}
+    ${BINDER_NDK}
+    ${LOG_LIB}
 )
