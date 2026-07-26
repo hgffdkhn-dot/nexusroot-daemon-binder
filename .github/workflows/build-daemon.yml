@@ -20,12 +20,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 缓存 AIDL 生成结果（跳过 SDK 安装）
       - name: Cache AIDL generated sources
         id: cache-aidl
         uses: actions/cache@v4
         with:
           path: gen
-          key: aidl-ndk-${{ hashFiles('aidl/**') }}
+          key: aidl-ndk-${{ hashFiles('aidl/**') }}-v2
 
       - name: Setup Android SDK (only if cache miss)
         if: steps.cache-aidl.outputs.cache-hit != 'true'
@@ -38,6 +39,17 @@ jobs:
         run: |
           mkdir -p gen
           $ANDROID_SDK_ROOT/build-tools/34.0.0/aidl --lang=ndk -I aidl -o gen -h gen aidl/com/nexusroot/manager/*.aidl
+
+      # 确保生成文件存在（双重保险）
+      - name: Verify AIDL output
+        run: |
+          echo "Checking for generated headers..."
+          ls -R gen
+          if [ ! -f "gen/com/nexusroot/manager/INexusRootService.h" ]; then
+            echo "ERROR: AIDL generation failed, missing header."
+            exit 1
+          fi
+          echo "AIDL headers OK."
 
       - name: Setup NDK
         uses: nttld/setup-ndk@v1
