@@ -1,4 +1,4 @@
-name: Build Binder Daemon
+name: Build Binder Daemon (NDK)
 
 on:
   push:
@@ -20,13 +20,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 缓存 AIDL 生成的结果，避免重复下载 SDK
       - name: Cache AIDL generated sources
         id: cache-aidl
         uses: actions/cache@v4
         with:
           path: gen
-          key: aidl-${{ hashFiles('aidl/**') }}
+          key: aidl-ndk-${{ hashFiles('aidl/**') }}
 
       - name: Setup Android SDK (only if cache miss)
         if: steps.cache-aidl.outputs.cache-hit != 'true'
@@ -34,14 +33,11 @@ jobs:
         with:
           packages: 'build-tools;34.0.0 platforms;android-34'
 
-      - name: Generate AIDL C++ sources (only if cache miss)
+      - name: Generate AIDL NDK sources (only if cache miss)
         if: steps.cache-aidl.outputs.cache-hit != 'true'
         run: |
           mkdir -p gen
-          # 收集所有 .aidl 文件
-          AIDL_FILES=$(find aidl -name "*.aidl" -printf "%p ")
-          echo "Generating C++ sources from: $AIDL_FILES"
-          $ANDROID_SDK_ROOT/build-tools/34.0.0/aidl --lang=cpp -I aidl -o gen -h gen $AIDL_FILES
+          $ANDROID_SDK_ROOT/build-tools/34.0.0/aidl --lang=ndk -I aidl -o gen -h gen aidl/com/nexusroot/manager/*.aidl
 
       - name: Setup NDK
         uses: nttld/setup-ndk@v1
@@ -57,8 +53,7 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
             -DANDROID_ABI=${{ matrix.android_abi }} \
             -DANDROID_PLATFORM=android-24 \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INCLUDE_PATH=${GITHUB_WORKSPACE}/gen
+            -DCMAKE_BUILD_TYPE=Release
           cmake --build . --target nexusrootd -- -j$(nproc)
 
       - name: Upload artifact
